@@ -38,8 +38,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let github_client = match GitHubClient::new(&token, &username) {
         Ok(client) => client,
-        Err(e) => {eprint!("Failed to create github client {}", e);
-            return Err(e);}
+        Err(e) => {
+            eprint!("Failed to create github client {}", e);
+            return Err(e);
+        }
     };
 
     println!("Fetching repositories for user {}", username);
@@ -67,16 +69,25 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let choice = choice.trim();
 
     match choice {
-        "1" => {delete_all_repositories(&github_client, &repos).await?;},
-        "2" => {delete_specific_repositories(&github_client, &repos).await?;},
-        "3" | _ => {println!("Exiting program.");}
+        "1" => {
+            delete_all_repositories(&github_client, &repos).await?;
         }
+        "2" => {
+            delete_specific_repositories(&github_client, &repos).await?;
+        }
+        "3" | _ => {
+            println!("Exiting program.");
+        }
+    }
 
-        Ok(())
+    Ok(())
 }
 
 //yordamchi funksiyalar
-async fn delete_all_repositories(github_client: &GitHubClient, repos: &[Repository]) -> Result<(), Box<dyn Error>> {
+async fn delete_all_repositories(
+    github_client: &GitHubClient,
+    repos: &[Repository],
+) -> Result<(), Box<dyn Error>> {
     println!("\nWARNING: this will permanentaly delete all listed repository.");
     println!("Type 'Delete all' to confirm deletion of all repos or 'Cancel'");
 
@@ -108,7 +119,10 @@ async fn delete_all_repositories(github_client: &GitHubClient, repos: &[Reposito
     Ok(())
 }
 
-async fn delete_specific_repositories(github_client: &GitHubClient, repos: &[Repository]) -> Result<(), Box<dyn Error>> {
+async fn delete_specific_repositories(
+    github_client: &GitHubClient,
+    repos: &[Repository],
+) -> Result<(), Box<dyn Error>> {
     println!("\nEnter the numbers of repos to delete, separated by commas (e.g 1,2,3)");
 
     let mut selection = String::new();
@@ -122,10 +136,8 @@ async fn delete_specific_repositories(github_client: &GitHubClient, repos: &[Rep
 
     match indices {
         Ok(indices) => {
-            let selected_repos: Vec<&Repository> = indices
-                .iter()
-                .filter_map(|&i| repos.get(i))
-                .collect();
+            let selected_repos: Vec<&Repository> =
+                indices.iter().filter_map(|&i| repos.get(i)).collect();
 
             if selected_repos.is_empty() {
                 println!("No valid repos selected");
@@ -137,7 +149,7 @@ async fn delete_specific_repositories(github_client: &GitHubClient, repos: &[Rep
             for (i, repo) in selected_repos.iter().enumerate() {
                 println!("{}. {}", i + 1, repo.name);
             }
-            
+
             println!("\nWARNING: This will permanently delete these repositories.");
             println!("Type 'DELETE SELECTED' to confirm, or 'CANCEL' to exit:");
 
@@ -155,17 +167,17 @@ async fn delete_specific_repositories(github_client: &GitHubClient, repos: &[Rep
 
                     match delete_repo(github_client, &repo.owner.login, &repo.name).await {
                         Ok(_) => println!("Success"),
-                        Err(e) => println!("Error: {}", e)
+                        Err(e) => println!("Error: {}", e),
                     }
 
                     tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
                 }
 
                 println!("Deletion process completed");
-            }else {
+            } else {
                 println!("operation cancelled");
             }
-        },
+        }
 
         Err(_) => {
             println!("Invalid input. Pleas enter numbers separated by commas. (E.g. 1,2,3)");
