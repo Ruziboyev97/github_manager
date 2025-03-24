@@ -11,4 +11,3 @@ pub struct Repository {
 pub struct Owner {
     pub login: String,
 }
-
