@@ -3,9 +3,8 @@ mod github;
 use github::client::GitHubClient;
 use github::models::Repository;
 use github::operations::{delete_repo, get_all_repos};
-use serde::de::Error;
-use std::f128::consts::E;
-use std::io::{self, stdout, Write};
+use std::error::Error;
+use std::io::{self, Write};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -37,7 +36,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
         return Err("Github username cannot be empty".into());
     }
 
-    let github_client = GitHubClient::new(&token, &username);
+    let github_client = match GitHubClient::new(&token, &username) {
+        Ok(client) => client,
+        Err(e) => {eprint!("Failed to create github client {}", e);
+            return Err(e);}
+    };
 
     println!("Fetching repositories for user {}", username);
     let repos = get_all_repos(&github_client).await?;
@@ -56,7 +59,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("2. Delete specific repositories");
     println!("3. Exit");
     print!("Enter your choice (1-3): ");
-    io:stdout().flush()?;
+    io::stdout().flush()?;
 
     //Get user choice
     let mut choice = String::new();
@@ -79,7 +82,7 @@ async fn delete_all_repositories(github_client: &GitHubClient, repos: &[Reposito
 
     let mut confirmation = String::new();
     io::stdout().flush()?;
-    io::stdin().read_line(&mut confirmation);
+    io::stdin().read_line(&mut confirmation)?;
     let confirmation = confirmation.trim();
 
     if confirmation == "Delete all" {
@@ -114,7 +117,7 @@ async fn delete_specific_repositories(github_client: &GitHubClient, repos: &[Rep
     let indices: Result<Vec<usize>, _> = selection
         .trim()
         .split(",")
-        .map(|s| s.trim().parse()::<usize>().map(|n| n - 1))
+        .map(|s| s.trim().parse::<usize>().map(|n| n - 1))
         .collect();
 
     match indices {
@@ -150,9 +153,9 @@ async fn delete_specific_repositories(github_client: &GitHubClient, repos: &[Rep
                     print!("Deleting {}...", repo.name);
                     io::stdout().flush()?;
 
-                    match delete_repo(github_client, &repo.owner, &repo.name).await {
+                    match delete_repo(github_client, &repo.owner.login, &repo.name).await {
                         Ok(_) => println!("Success"),
-                        Err(e) => println!("Error: {}", e);
+                        Err(e) => println!("Error: {}", e)
                     }
 
                     tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
