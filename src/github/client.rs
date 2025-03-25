@@ -1,6 +1,7 @@
 use reqwest::{header, Client};
 use std::error::Error;
 
+#[derive(Clone)]
 pub struct GitHubClient {
     client: Client,
     username: String,
